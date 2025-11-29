@@ -17,7 +17,7 @@ import 'package:safe_exam_app/features/teacher/monitoring/exam_results_list_scre
 import 'package:safe_exam_app/features/student/widgets/custom_bottom_nav_bar.dart';
 import 'package:safe_exam_app/features/teacher/cbt_url_screen.dart';
 import 'package:safe_exam_app/features/exam/cbt_exam_screen.dart';
-import 'package:safe_exam_app/features/exam/cbt_exam_screen_web_preview.dart';
+// Web preview removed - causes Android build error due to dart:html dependency
 
 class AppRouter {
   static final GoRouter router = GoRouter(
