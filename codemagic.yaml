@@ -5,42 +5,39 @@ workflows:
     environment:
       flutter: stable
       java: 17
-    
+
     scripts:
       - name: Get Flutter packages
         script: |
           flutter pub get
-          
+
       - name: Flutter Clean
         script: |
           flutter clean
-          
+
       - name: Build Optimized APK
         script: |
           # Build arm64 APK only (smallest size, most common device)
-          # Target size: 15-20 MB with optimizations
           flutter build apk --release \
             --obfuscate \
             --split-debug-info=build/app/outputs/symbols \
             --split-per-abi \
             --target-platform android-arm64 \
             --tree-shake-icons \
-            --no-pub \
-            --shrink \
-            --dart-define=flutter.inspector.structuredErrors=false
-          
-          # Rename for clarity
+            --no-shrink
+
+          # Rename output file
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
              build/app/outputs/flutter-apk/safe-exam-app-v1.0.0-arm64.apk
-          
+
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
       - build/app/outputs/symbols/**
-      
+
     publishing:
       email:
         recipients:
-          - admin@example.com # Ganti dengan email Anda
+          - admin@example.com
         notify:
           success: true
           failure: true

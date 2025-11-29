@@ -6,11 +6,19 @@ class CbtService {
   static const String _defaultUrl = 'https://google.com'; // Default for testing
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // Get CBT URL - Try Supabase first, fallback to SharedPreferences
+  // Get CBT URL - Use SharedPreferences first for reliability
   Future<String> getCbtUrl() async {
+    // Try local storage first (more reliable)
+    final prefs = await SharedPreferences.getInstance();
+    final localUrl = prefs.getString(_cbtUrlKey);
+    
+    if (localUrl != null && localUrl.isNotEmpty) {
+      print('✅ CBT URL loaded from local storage: $localUrl');
+      return localUrl;
+    }
+
+    // Try Supabase as fallback
     try {
-      // Try to fetch from Supabase 'system_settings' table
-      // Assuming table structure: id, key, value
       final response = await _supabase
           .from('system_settings')
           .select('value')
@@ -18,36 +26,38 @@ class CbtService {
           .maybeSingle();
 
       if (response != null && response['value'] != null) {
+        final url = response['value'] as String;
         // Cache it locally
-        await _saveLocally(response['value']);
-        return response['value'];
+        await _saveLocally(url);
+        print('✅ CBT URL loaded from Supabase: $url');
+        return url;
       }
     } catch (e) {
       print('Error fetching CBT URL from Supabase: $e');
     }
 
-    // Fallback to local storage
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_cbtUrlKey) ?? _defaultUrl;
+    // Return default if nothing found
+    print('⚠️ Using default CBT URL: $_defaultUrl');
+    return _defaultUrl;
   }
 
-  // Save CBT URL - Save to Supabase and SharedPreferences
+  // Save CBT URL - Save to SharedPreferences first, then try Supabase
   Future<void> saveCbtUrl(String url) async {
-    // Save locally first
+    // Save locally first (always works)
     await _saveLocally(url);
+    print('✅ CBT URL saved to local storage: $url');
 
+    // Try to save to Supabase (optional)
     try {
-      // Try to save to Supabase
-      // Upsert logic: insert or update if key exists
       await _supabase.from('system_settings').upsert({
         'key': 'cbt_url',
         'value': url,
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'key');
+      print('✅ CBT URL saved to Supabase: $url');
     } catch (e) {
       print('Error saving CBT URL to Supabase: $e');
-      // If table doesn't exist, we just rely on local storage for now
-      // In a real scenario, we'd need to create the table
+      // Not critical - local storage is enough for testing
     }
   }
 
